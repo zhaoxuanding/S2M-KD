@@ -1,0 +1,14 @@
+{
+  "data_root": "data/Data1",
+  "output": "outputs/teacher_swin_data1.pth",
+  "model": "swin_tiny_patch4_window7_224",
+  "num_classes": 4,
+  "image_size": 224,
+  "epochs": 30,
+  "batch_size": 128,
+  "learning_rate": 0.0005,
+  "weight_decay": 0.05,
+  "num_workers": 8,
+  "seed": 42
+}
+

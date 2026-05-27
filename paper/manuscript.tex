@@ -1,0 +1,520 @@
+\documentclass[review]{elsarticle}
+
+% --- Packages ---
+\usepackage{xcolor}
+\usepackage{makecell}
+\usepackage{lineno}
+\usepackage[hidelinks,bookmarks=true]{hyperref}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{subfigure}
+\usepackage{float}
+\usepackage{amssymb}
+\usepackage[utf8]{inputenc}
+\usepackage{caption}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{makecell}
+\usepackage{arydshln}
+\modulolinenumbers[5]
+
+\journal{Pattern Analysis and Applications}
+
+\bibliographystyle{elsarticle-num}
+
+\begin{document}
+
+\begin{frontmatter}
+
+\title{Non-Invasive Poultry Disease Diagnosis via Fecal Imaging with Cross-Architecture Distillation}
+
+\author[1]{Zhaoxuan Ding}
+\author[1]{Fengchuang Xing\corref{cor1}}
+\author[2]{Chao Zhou}
+\author[1]{Peiyuan Zeng}
+\author[1]{Hongwei Yue}
+\author[3]{Haibin Ouyang}
+
+\address[1]{School of Electronic and Information Engineering, Guangdong University of Education, Guangzhou, China}
+\address[2]{School of Electronic Information, Huzhou College, Huzhou 313000, China}
+\address[3]{School of Mechanical and Electric Engineering, Guangzhou University, Guangzhou 510006, China}
+
+\cortext[cor1]{Corresponding author: xfchuang@e.gzhu.edu.cn}
+\fntext[myfootnote]{Email: dingzhaoxuan@hotmail.com, xfchuang@e.gzhu.edu.cn, zhouchaodzkd@e.gzhu.edu.cn, andyzeng0921@outlook.com, yuehongwei@gdei.edu.cn}
+
+\begin{abstract}
+The rapid intensification of the poultry industry necessitates automated disease diagnosis to ensure global food security, yet state-of-the-art deep learning models like MaxViT and ResNet152 remain too computationally intensive for real-time deployment on edge devices. 
+To address this deployment bottleneck, we propose a Cross-Architecture Knowledge Distillation framework \textbf{(S2M-KD)}. 
+The proposed framework has three key designs. First, S2M-KD transfers knowledge from a Swin Transformer teacher to a MobileNetV3 student, allowing the lightweight CNN model to exploit the teacher's global representation capability. Second, a hybrid distillation loss is introduced to reduce the architectural gap between Transformer and CNN models by combining prediction-level and feature-level supervision. Third, the resulting student model provides an efficient deployment-oriented solution for real-time poultry disease monitoring on edge devices.
+Extensive evaluations validate the superiority of our proposed method. Experimental results across three strictly isolated datasets demonstrate that our student model consistently outperforms the teacher model, achieving a peak accuracy of 99.79\% on the mild-noise real-world dataset (Data1). Crucially, on the most complex dataset, the student model exhibits superior robustness, improving accuracy from the teacher's 98.41\% to 98.72\%. Furthermore, deployment tests confirm the model's efficiency, achieving an inference speed of 39.43 FPS (25.36 ms latency) on a standard CPU.
+\end{abstract}
+
+\begin{keyword}
+Knowledge distillation \sep Poultry disease classification \sep Lightweight CNN \sep Edge computing \sep Smart agriculture \sep Vision Transformer
+\end{keyword}
+
+\end{frontmatter}
+
+\linenumbers
+
+% --- Section 1: Introduction ---
+\section{Introduction}
+
+The poultry sector plays a vital role in global food security and is expected to meet the protein demands of a population reaching 9.6 billion by 2050 \cite{mottet2017global,hafez2020challenges}.
+However, intensive poultry farming systems are highly vulnerable to infectious diseases such as coccidiosis, Newcastle disease, and salmonellosis, which can cause substantial economic losses and pose serious risks to animal health and public health \cite{fardin2025robust,abd2023poultry}.
+Therefore, early and reliable disease diagnosis is essential for improving farm management, reducing losses, and enabling timely intervention.
+
+In recent years, deep learning has significantly advanced computer vision applications in precision agriculture and livestock monitoring \cite{kamilaris2018deep,li2021survey,wang2022survey,zhang2023edge,waksman1997plantcondition,story2015greenhouse,kelly2016lesion,chen2021plantdisease,montalbo2022coffee,kaur2024cotton}.
+In particular, image-based poultry disease diagnosis has emerged as a promising non-invasive solution for practical farm environments \cite{machuve2021machine,machuve2022poultry,srivastava2025integrated}.
+By analyzing visual symptoms from poultry-related images, such approaches can reduce reliance on manual inspection and improve the efficiency and consistency of disease screening.
+
+The development of automated poultry disease diagnosis has gone through several stages.
+Early studies mainly relied on conventional convolutional neural networks (CNNs).
+For example, Zhuang et al. \cite{zhuang2019detection} and Machuve et al. \cite{machuve2021machine,machuve2022poultry} applied CNN-based frameworks to identify diseased broilers, demonstrating the feasibility of deep visual diagnosis in poultry farming.
+Subsequent studies adopted stronger backbone networks, such as VGG \cite{simonyan2014very}, Inception \cite{szegedy2016rethinking}, ResNet \cite{he2016deep}, DenseNet \cite{huang2017densely,mbelwa2021deep}, and Xception \cite{chollet2017xception}, to improve feature representation and classification accuracy \cite{lawal2024poultry,cina2023detection}.
+Recent image-classification studies further show that preserving spatial resolution in feature maps can improve CNN-family classifiers without excessive computational growth \cite{rahimzadeh2024wise}.
+Although these CNN-based models achieved encouraging results, their ability to capture long-range dependencies and global structural cues remains limited, especially in fine-grained disease recognition tasks with subtle inter-class differences.
+
+With the introduction of Transformer architectures into computer vision, research attention gradually shifted toward modeling global contextual information.
+The Vision Transformer (ViT) \cite{dosovitskiy2020image} and its variants demonstrated strong capability in capturing long-range dependencies, and were quickly extended to agricultural vision tasks.
+Recent studies have incorporated attention mechanisms and hybrid Transformer-based designs to enhance poultry disease recognition performance \cite{li2023attention,he2023reliable,wang2023swin}.
+In diagnostic image analysis beyond agriculture, Transformer-based detection has also been shown to improve small-target recognition in noisy video frames, further supporting the value of Transformer representations for subtle visual evidence \cite{liu2024tiny}.
+Notably, Fardin et al. \cite{fardin2025robust} proposed a MaxViT-based framework using multi-axis attention \cite{tu2022maxvit}, while other studies further improved interpretability or feature discrimination through explanation modules and refined descriptors \cite{luong2024improving,khan2025assessment,ren2024research}.
+These advances confirm that Transformer-based models are highly effective for complex poultry disease classification tasks.
+However, their improved accuracy often comes at the cost of high computational complexity and large parameter counts, which severely limits real-time deployment on edge devices in farm environments \cite{luo2025optimizing,zhang2023edge,eurasipproceedings2024}.
+
+To address this deployment challenge, researchers have explored lightweight architectures for mobile and embedded applications.
+Representative models such as MobileNet \cite{howard2019searching,sandler2018mobilenetv2} and other efficient CNNs have shown promising efficiency in agricultural pest and disease detection \cite{chen2023lightweight,singh2024comprehensive}.
+Related real-time vision studies also indicate that lightweight feature fusion and attention modules can retain accuracy while reducing parameters for deployment-oriented systems \cite{hu2024lffnet}.
+Nevertheless, lightweight models usually sacrifice representation capacity, making them less effective in complex farm scenes with cluttered backgrounds, illumination variations, occlusions, and subtle pathological differences \cite{chidziwisano2025deep,degu2023smartphone}.
+This reveals a fundamental contradiction in practical poultry disease diagnosis: high-capacity models offer superior accuracy but are difficult to deploy, whereas lightweight models are deployment-friendly but often insufficiently discriminative.
+Recent studies have therefore emphasized the need to balance recognition accuracy and computational efficiency \cite{srivastava2023deep,bingol2023prediction,mirbhageri2023survey}.
+
+Knowledge distillation (KD) provides an effective way to alleviate this contradiction by transferring informative knowledge from a high-capacity teacher model to a compact student model \cite{hinton2015distilling,gou2021knowledge}.
+Teacher--student learning has likewise been explored in semi-supervised classification settings to improve learning when label information is limited or noisy \cite{fan2024meanteacher}.
+Most existing distillation methods are developed within homogeneous architectures, such as CNN-to-CNN transfer \cite{romero2014fitnets}.
+However, heterogeneous distillation across different architectures is particularly attractive for fine-grained agricultural vision tasks, because it has the potential to combine the global modeling ability of Transformers with the efficiency and inductive bias of CNNs \cite{park2019relational,yim2017gift}.
+Motivated by this observation, we propose a Cross-Architecture Knowledge Distillation framework, termed S2M-KD, which transfers discriminative knowledge from a Swin Transformer teacher \cite{liu2021swin} to a lightweight MobileNetV3 student.
+The proposed framework aims to preserve the strong representational capability of Transformer-based models while achieving the computational efficiency required for real-time poultry disease diagnosis on resource-constrained devices.
+The main contributions of this work are summarized as follows:
+\begin{itemize}
+    \item We propose S2M-KD, an edge-oriented lightweight classification framework for poultry fecal disease recognition. The framework adopts a teacher--student paradigm to convert the strong recognition capability of a high-capacity model into a compact MobileNetV3-based student, thereby addressing the deployment bottleneck of deep disease recognition models in resource-limited farming scenarios.
+
+    \item We design a heterogeneous Transformer-to-CNN distillation mechanism to bridge the architectural discrepancy between the Swin Transformer teacher and the MobileNetV3 student. Specifically, the proposed distillation objective integrates prediction-level supervision and feature-level guidance, enabling the CNN student to learn both class-discriminative responses and informative representations from the Transformer teacher.
+
+    \item We formulate a practical edge-deployment solution for poultry fecal image analysis by explicitly considering the accuracy--efficiency trade-off. The resulting distilled model retains lightweight inference while improving robustness and generalization across isolated real-world datasets, making it suitable for intelligent poultry farming applications.
+\end{itemize}
+
+
+\section{Related Works}
+
+This section reviews the literature relevant to our work, categorizing it into deep learning for poultry disease diagnostics, vision transformers in agriculture, and lightweight modeling via knowledge distillation.
+
+\subsection{Deep Learning in Poultry Disease Diagnostics}
+The evolution of automated poultry diagnostics has progressed through several distinct phases.
+Initial efforts focused on adapting standard CNNs. Early works by Zhuang et al. \cite{zhuang2019detection} and Machuve et al. \cite{machuve2021machine, machuve2022poultry} successfully applied architectures like VGG \cite{simonyan2014very} and Inception \cite{szegedy2016rethinking} to identify sick broilers.
+Subsequent research sought to maximize accuracy through deeper networks; ResNet \cite{he2016deep} and DenseNet \cite{huang2017densely, mbelwa2021deep} were widely adopted for their strong feature extraction capabilities.
+More recently, the focus has shifted towards integrated and ensemble approaches.
+Srivastava and Pandey \cite{srivastava2025integrated} and others \cite{spie2025deep, ijisrt2024assessment,story2015greenhouse,chen2021plantdisease,montalbo2022coffee} have demonstrated that deep learning can significantly outperform traditional manual diagnosis. Specifically, integrated deep learning approaches analyzing chicken manure images have shown immense potential for non-invasive disease classification \cite{dhungana2025integrated}. However, despite their success, CNN-based methods inherently possess a limited receptive field \cite{liu2021swin, gupta2023review}, making it difficult to capture the long-range dependencies and global structural patterns critical for distinguishing fine-grained disease characteristics in complex farm environments.
+
+
+\subsection{Vision Transformers in Smart Agriculture}
+To address the limitations of CNNs, the Transformer architecture has been introduced to computer vision \cite{dosovitskiy2020image}.
+The Swin Transformer \cite{liu2021swin}, with its hierarchical shifted window mechanism, has become a standard for modeling global context.
+This paradigm has been quickly adopted in precision agriculture. Visual attention mechanisms have proven highly effective in extracting robust features from low-quality images in complex agricultural environments \cite{jiang2022fusion}. Building on this capability, recent studies \cite{li2023attention, he2023reliable} integrated attention mechanisms to enhance poultry disease recognition. Notably, in 2025, Fardin et al. \cite{fardin2025robust} achieved state-of-the-art (SOTA) performance using a MaxViT framework \cite{tu2022maxvit}, while Khan et al. \cite{khan2025assessment} confirmed the superior accuracy of Transformer-based approaches over traditional CNNs.
+However, this accuracy comes at a cost. High-capacity models like ResNet152-SVM \cite{luo2025optimizing} and ViT variants often require massive computational resources, creating a significant barrier for real-time inference on resource-constrained edge devices \cite{zhang2023edge}.
+
+\subsection{Lightweight Modeling and Knowledge Distillation}
+To bridge the gap between high performance and edge deployability, researchers have focused on lightweight architectures and model compression \cite{chen2023lightweight, srivastava2023deep}.
+MobileNetV3 \cite{howard2019searching} is a prime example of an efficient student architecture.
+KD \cite{hinton2015distilling} serves as a key enabler for this transfer.
+While classic approaches focus on homogeneous distillation (CNN to CNN) \cite{romero2014fitnets, zhao2024lightweight}, recent surveys \cite{gou2021knowledge, arxiv2025survey} suggest that heterogeneous distillation—transferring knowledge from a Transformer teacher to a CNN student—offers superior benefits.
+Theoretical works \cite{raghu2021vision, yuan2020revisiting, d2021convit} argue that this approach allows the CNN student to inherit "global context awareness" that is otherwise inaccessible due to its inductive bias.
+In this study, we leverage this heterogeneous strategy, using a Swin Transformer to guide a MobileNetV3, achieving a Pareto-optimal balance of accuracy and efficiency suitable for modern smart farming.
+
+\section{Proposed Method}
+\subsection{Task Formulation}
+We formulate poultry feces classification as a multi-class image recognition problem. Given an input RGB image 
+
+\begin{equation}
+X \in \mathbb{R}^{H \times W \times 3},
+\label{eq:input_image}
+\end{equation}
+which depicts poultry feces captured under real farm conditions, the objective is to predict its corresponding category label
+\begin{equation}
+y \in \{1, 2, \dots, C\},
+\label{eq:label_space}
+\end{equation}
+where $C$ denotes the number of feces categories associated with different health or physiological states. The model aims to learn a discriminative mapping function
+\begin{equation}
+f_{\theta} : X \to p(y|X),
+\label{eq:model_mapping}
+\end{equation}
+where $p(y|X)$ represents the predicted probability distribution over all feces categories.
+
+This task exhibits several challenges in practical agricultural environments. First, different feces categories often present subtle inter-class visual differences, such as slight variations in color distribution, moisture level, and texture patterns. Second, significant intra-class variability exists due to uncontrolled illumination, camera viewpoints, background clutter, and feces deformation in real-world farm scenes. Third, feces images may contain noise introduced by occlusions, shadows, and impurities, which further complicates robust visual representation learning. These factors make poultry feces classification a fine-grained visual recognition problem that requires models to capture both local texture details and global structural cues.
+
+In addition, the target application scenario involves on-site deployment in poultry farms, where computing resources are limited and real-time inference is often required. Therefore, the learning objective is not only to maximize classification accuracy but also to design a computationally efficient model suitable for resource-constrained devices. This requirement motivates the adoption of a teacher–student learning paradigm, where a high-capacity model is first used to learn discriminative visual representations, and its knowledge is then transferred to a lightweight model for efficient deployment.
+
+% --- Figure 2: Model Architecture ---
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=1.0\textwidth]{model_architecture.pdf}
+\caption{The proposed framework. It leverages a Swin-Tiny teacher to distill knowledge into a MobileNetV3 student using a combination of soft distillation loss and hard cross-entropy loss.}
+\label{fig:framework}
+\end{figure}
+
+\subsection{Overall Framework}
+The motivation of this work comes from a practical trade-off in poultry fecal disease recognition. High-capacity deep models can provide strong discriminative representations, but their computational cost limits their deployment on resource-constrained edge devices. In contrast, lightweight CNN models are more efficient, but they may have limited ability to model global contextual dependencies that are important for distinguishing visually similar fecal disease categories. To address this trade-off, we propose a Cross-Architecture Knowledge Distillation framework, termed S2M-KD. The overall idea is to use a Swin Transformer as the teacher model to capture rich global and local representations, and then transfer this knowledge to a lightweight MobileNetV3 student for efficient inference. In this way, S2M-KD aims to improve the recognition capability of the lightweight model while maintaining its deployment efficiency.
+
+As illustrated in Fig.~\ref{fig:framework}, the overall framework consists of two stages: (1) teacher model learning and (2) student model distillation.
+In the first stage, a high-capacity Swin Transformer is trained to learn discriminative representations from poultry feces images. Owing to its hierarchical architecture and window-based self-attention mechanism, the teacher model is capable of capturing both fine-grained local textures and global structural patterns, which are essential for distinguishing visually similar feces categories. After convergence, the teacher model is fixed and serves as a knowledge provider in the subsequent distillation stage.
+
+In the second stage, a lightweight MobileNetV3 is adopted as the student model and optimized under the joint supervision of ground-truth labels and the soft predictions generated by the teacher network. Specifically, for each input image, the frozen teacher network produces a softened probability distribution that encodes rich inter-class similarity information. The student network is encouraged to mimic these soft targets while simultaneously fitting the hard labels, enabling it to learn more discriminative decision boundaries than training with hard supervision alone.
+
+During training, both the teacher and student networks take the same input image as input. The teacher network is kept frozen to ensure stable knowledge transfer, while the student network is updated through back-propagation by minimizing a joint loss function composed of the standard classification loss and the distillation loss. At inference time, only the student model is retained for deployment, which significantly reduces computational cost and memory footprint while maintaining high classification performance.
+
+This two-stage teacher–student learning paradigm effectively transfers the discriminative visual knowledge learned by a powerful transformer-based model to a compact convolutional network, making the proposed framework particularly suitable for real-world poultry farming scenarios with limited computational resources.
+
+\subsection{Teacher Network: Swin Transformer}
+We adopt Swin Transformer as the teacher network due to its strong representation capability and efficient hierarchical modeling of visual features. Unlike standard Transformers that compute global self-attention with quadratic complexity, Swin Transformer restricts self-attention computation to non-overlapping local windows, which significantly reduces computational cost while preserving modeling capacity. Given an input feature map $X \in \mathbb{R}^{H \times W \times 3}$, the window-based multi-head self-attention (W-MSA) is formulated as 
+\begin{equation}
+\text{W-MSA}(\mathbf{Q}, \mathbf{K}, \mathbf{V}) = \text{Softmax} \left( \frac{\mathbf{Q} \mathbf{K}^\top}{\sqrt{d}} \right) \mathbf{V},
+\label{eq:w_msa}
+\end{equation}
+where $Q$,$K$,$V$ are the query, key, and value projections of tokens within each local window, and $d$ denotes the feature dimension of each attention head.
+
+To enable cross-window information interaction, Swin Transformer introduces the shifted window mechanism (SW-MSA), where the window partition is shifted by a fixed offset between successive Transformer blocks. This design allows tokens from neighboring windows to attend to each other across layers, effectively enlarging the receptive field without introducing global self-attention. Formally, the attention operation alternates between W-MSA and SW-MSA, yielding hierarchical feature representations at multiple spatial resolutions.
+
+In the poultry feces classification task, discriminative cues are often embedded in fine-grained texture patterns and subtle morphological structures. The localized attention mechanism enables Swin Transformer to capture local texture variations, while the shifted window strategy facilitates global contextual modeling of feces appearance. Moreover, the hierarchical patch merging operation produces multi-scale feature maps 
+\begin{equation}
+\mathbf{X}^{l+1} = \text{Merge}(\mathbf{X}^l),
+\label{eq:patch_merge}
+\end{equation}
+which is beneficial for handling feces with varying sizes and irregular shapes in real farm scenes.
+
+As a high-capacity model, Swin Transformer learns highly discriminative decision functions
+\begin{equation}
+f_{t}(x) = \text{Softmax}(z_t),
+\label{eq:teacher_output}
+\end{equation}
+where $z_t$ denotes the teacher logits. The resulting soft probability distribution encodes rich inter-class similarity relationships, which serves as informative supervisory knowledge for the student network in the distillation stage. Although Swin Transformer achieves strong performance, its computational cost and memory footprint hinder direct deployment in resource-constrained agricultural environments. Therefore, we employ Swin Transformer exclusively as the teacher model during training to provide reliable knowledge guidance, while the lightweight student model is used for efficient inference.
+
+\subsection{Student Network: MobileNetV3}
+We adopt MobileNetV3 as the student network due to its favorable trade-off between model compactness and representation capacity, making it suitable for deployment in resource-constrained agricultural environments. MobileNetV3 is built upon efficient depthwise separable convolutions and lightweight attention mechanisms, which significantly reduce computational cost and model parameters compared with standard convolutional neural networks.
+
+Given an input feature map $X \in \mathbb{R}^{H \times W \times 3}$, a standard convolution can be decomposed into a depthwise convolution followed by a pointwise convolution, formulated as
+\begin{equation}
+\mathbf{Y} = \text{Conv}_{1 \times 1}(\text{DWConv}_{k \times k}(\mathbf{X})),
+\label{eq:depthwise_separable}
+\end{equation}
+where $\text{DWConv}_{k \times k}$ denotes depthwise convolution with kernel size $k \times k$, and $\text{Conv}_{1 \times 1}$ represents pointwise convolution. This decomposition reduces computational complexity from
+\begin{equation}
+\mathcal{O}(k^2 C_{in} C_{out}) \text{ to } \mathcal{O}(k^2 C_{in} + C_{in} C_{out}),
+\label{eq:complexity_optimization}
+\end{equation}
+enabling efficient feature extraction on edge devices.
+
+MobileNetV3 further incorporates lightweight channel-wise attention through the squeeze-and-excitation (SE) module to enhance discriminative feature learning. Given a feature map $X$, the SE operation can be formulated as
+\begin{equation}
+\begin{aligned}
+\mathbf{s} &= \sigma(\mathbf{W}_2 \delta(\mathbf{W}_1 \cdot \text{GAP}(\mathbf{X}))), \\
+\hat{\mathbf{X}} &= \mathbf{s} \odot \mathbf{X},
+\end{aligned}
+\label{eq:se_block}
+\end{equation}
+where $\text{GAP}(\cdot)$ denotes global average pooling,  $\delta(\cdot)$ and $\sigma(\cdot)$ are the ReLU and sigmoid activation functions, respectively, and $\odot$ denotes channel-wise multiplication. This mechanism allows the student network to adaptively emphasize informative feature channels related to texture and morphology cues in feces images.
+
+Despite its efficiency, the representational capacity of MobileNetV3 is inherently constrained by its lightweight design, which may lead to suboptimal performance when trained solely with hard labels on fine-grained classification tasks. To mitigate this limitation, the student network is guided by the teacher network through knowledge distillation. Specifically, the student network produces class logits
+\begin{equation}
+f_{s}(x) = \text{Softmax}(z_s),
+\label{eq:student_output}
+\end{equation}
+where $z_s$ denotes the student logits. By encouraging the student to mimic the softened output distribution of the teacher model, the student network is able to learn more informative decision boundaries and richer inter-class relationships, compensating for its limited model capacity.
+
+Overall, MobileNetV3 serves as an efficient student model that, when equipped with distilled knowledge from a high-capacity Swin Transformer, achieves a favorable balance between classification accuracy and computational efficiency for practical poultry feces recognition.
+
+\subsection{Knowledge Distillation Strategy}
+To transfer discriminative knowledge from the high-capacity Swin Transformer to the lightweight MobileNetV3, we adopt a knowledge distillation strategy based on soft target supervision. Given an input image $X$, the teacher network produces class logits $z_t$, and the student network outputs logits $z_s$. The softened probability distributions are obtained by applying temperature scaling:
+\begin{equation}
+p_{t}^{(T)}(X) = \text{Softmax} \left( \frac{z_t}{T} \right), \quad p_{s}^{(T)}(X) = \text{Softmax} \left( \frac{z_s}{T} \right),
+\label{eq:soft_outputs}
+\end{equation}
+where $T$ denotes the temperature parameter that controls the smoothness of the output distribution. A larger $T$ produces softer probability distributions, which reveal richer inter-class similarity information learned by the teacher network.
+The distillation loss is formulated as the Kullback–Leibler (KL) divergence between the softened teacher and student predictions:
+\begin{equation}
+L_{\text{KD}} = \text{KL} \left( p_{t}^{(T)}(X) \| p_{s}^{(T)}(X) \right).
+\label{eq:l_kd}
+\end{equation}
+
+This loss encourages the student network to mimic the structured class relationships captured by the teacher network, rather than merely fitting hard one-hot labels. Such soft supervision is particularly beneficial for fine-grained poultry feces classification, where visual differences between categories can be subtle and ambiguous.
+
+In addition to the distillation loss, the student network is simultaneously supervised by the ground-truth labels using the standard cross-entropy loss:
+\begin{equation}
+L_{\text{CE}} = -\sum_{c=1}^{C} y_c \log p_s(c|X).
+\label{eq:l_ce}
+\end{equation}
+where $y_c$ denotes the one-hot encoded ground-truth label. The overall training objective for the student network is defined as a weighted combination of the two losses:
+\begin{equation}
+L = \alpha L_{\text{CE}} + (1 - \alpha) L_{\text{KD}},
+\label{eq:l_total}
+\end{equation}
+where $\alpha \in[0,1]$ balances the contributions of hard-label supervision and soft-label distillation.
+
+By jointly optimizing the student network with respect to both hard labels and soft teacher predictions, the proposed distillation strategy effectively transfers the discriminative visual knowledge learned by the Swin Transformer to the lightweight MobileNetV3. This enables the student model to approximate the decision behavior of the teacher while maintaining a compact architecture suitable for deployment in resource-constrained poultry farming environments.
+
+% --- Section 4: Results ---
+\section{Experimental Results and Analyses}
+In this section, we conduct extensive experiments to thoroughly evaluate the proposed S2M-KD framework. We first introduce the datasets and experimental settings in Section~\ref{subsec:setup}. Then, we compare our method with a broad range of baseline and state-of-the-art (SOTA) approaches in Section~\ref{subsec:persota}. Qualitative results and ablation studies are further provided in Sections~\ref{subsec:quaana} and~\ref{subsec:abastu} to demonstrate the effectiveness of each component. Finally, we analyze the deployment efficiency on edge devices in Section~\ref{sec:deployment}.
+
+\begin{table}[t]
+\centering
+\caption{\small Statistics and splitting details of the three experimental datasets. The split ratios are approximate due to rounding.}
+\resizebox{1\columnwidth}{!}{
+\large
+\begin{tabular}{l:c:c:c:c:c:c:c}
+\Xhline{1pt} % 
+\textbf{Dataset} & \textbf{Year} & \textbf{Total Images} & \textbf{Split Ratio (Train:Val:Test)} & \textbf{Healthy} & \textbf{Coccidiosis} & \textbf{Salmonella} & \textbf{Newcastle} \\ \hline
+Dataset 1 & 2021 & 8,101 & 70\% : 15\% : 15\% & 2,090 & 2,077 & 2,096 & 1,838 \\
+Dataset 2 & 2023 & 8,470 & 70\% : 15\% : 15\% & 2,050 & 2,100 & 2,270 & 2,050 \\
+Dataset 3 & 2022 & 10,136 & 70\% : 15\% : 15\% & 2,592 & 2,603 & 2,625 & 2,316 \\
+\Xhline{1pt} % 
+\end{tabular}
+}
+\vspace{-1em}
+\label{tab:datasets}
+\end{table}
+
+\label{subsec:setup}
+
+We evaluate our model on three mutually exclusive, strictly isolated real-world datasets collected in practical scenarios from the Poultry Fecal Image Dataset (PFID) benchmark, covering noise conditions from mild to severe (Data1--Data3), to comprehensively assess the performance of the proposed method. The data statistics and train/val/test splits are summarized in Table~\ref{tab:datasets}. Dataset 1 (2021) is collected from Zenodo\footnote{\url{https://zenodo.org/records/4628934}}
+ and contains real-world images with relatively limited background interference and more stable illumination, corresponding to the mildest noise level among the three datasets. Dataset 2 (2023) is collected from Kaggle\footnote{\url{https://www.kaggle.com/datasets/allandclive/chicken-disease-1?resource=download&select=Train}}
+ and consists of real-world surveillance images with moderate background clutter and illumination variations. Dataset 3 (2022) is also collected from Kaggle\footnote{\url{https://www.kaggle.com/datasets/kausthubkannan/poultry-diseases-detection?select=poultry_diseases}}
+ and contains complex scenes with severe clutter, illumination changes, and frequent occlusions, representing the strongest noise intensity in our evaluation.
+
+\noindent\textbf{Comparison Methods.} We benchmark S2M-KD against a diverse set of representative baselines, including classic CNNs (VGG19, InceptionV3, and MobileNetV2), recent high-capacity CNN backbones (ResNet152 and DenseNet201 \cite{luo2025optimizing}), and state-of-the-art Vision Transformers (MaxViT, T2T-ViT, and DeiT \cite{fardin2025robust}). These baselines cover lightweight to high-capacity CNNs as well as attention-based architectures.
+
+\noindent\textbf{Implementation and Parameter Details.} All experiments are implemented in PyTorch and conducted on a single NVIDIA GeForce RTX 4090 GPU. We use AdamW with cosine annealing, an initial learning rate of $1\times10^{-4}$, batch size 128, and weight decay 0.05. The teacher (Swin-Tiny) and student (MobileNetV3-Large) are trained for 100 and 120 epochs, respectively, with distillation temperature $T=4.0$ and loss weight $\alpha=0.5$. All images are resized to $224\times224$, and data augmentation includes random flip, rotation, color jitter, Mixup, CutMix, and AutoAugment.
+
+\noindent\textbf{Performance Metrics.} The primary evaluation metric is Classification Accuracy, calculated as:
+\begin{equation}
+\text{Accuracy} = \frac{\sum_{i=1}^{C} TP_i}{N} \times 100\% ,
+\end{equation}
+where $TP_i$ represents the number of true positive predictions for class $i$, $C$ is the total number of classes, and $N$ is the total number of samples. 
+\subsection{Performance Evaluation on Individual Datasets} \label{subsec:persota}
+In this subsection, we evaluate the performance of the comparison methods on individual datasets, where the training and testing sets are drawn from the same dataset. The experimental results are reported in Table \ref{tab:sota_comparison}, and the following interesting observations can be made.
+\begin{itemize}
+\item As shown in Table \ref{tab:sota_comparison}, the proposed S2M-KD achieves SOTA or highly competitive classification accuracy across all three datasets while maintaining a significantly smaller model size. Compared with the strongest Transformer-based baseline (e.g., MaxViT), S2M-KD improves the accuracy by +0.25\%, +0.42\%, and +1.06\% on Data 1, Data 2, and Data 3, respectively, while reducing the number of parameters by approximately 93\% (4.2M vs. >30M). This demonstrates that S2M-KD achieves a superior balance between recognition performance and model compactness, which is particularly desirable for resource-constrained deployment scenarios.
+\item Comparing the student model before and after distillation, S2M-KD consistently outperforms the MobileNetV3-Large baseline on all datasets without introducing any additional parameters. Specifically, the classification accuracy is improved from 97.40\% to 99.79\% on Data 1, from 95.87\% to 99.38\% on Data 2, and from 94.70\% to 98.72\% on Data 3. These results indicate that the proposed Transformer-to-CNN heterogeneous distillation effectively transfers discriminative knowledge from the Transformer teacher (Swin-Tiny) to the lightweight CNN student, enabling the student network to surpass its original performance ceiling.
+\item Although the Transformer teacher model (Swin-Tiny) already achieves strong performance, the distilled student model further improves the accuracy on all three datasets while using only a fraction of the parameters. This suggests that heterogeneous distillation does not merely mimic the teacher's outputs, but rather facilitates complementary knowledge transfer across heterogeneous architectures, leading to a more parameter-efficient representation that is better suited for practical deployment.
+
+\item The performance gain on the most challenging dataset (Data 3) is particularly notable, where S2M-KD achieves a +1.06\% improvement over the best existing SOTA method and nearly 4\% improvement over the MobileNetV3-Large baseline. This indicates that the proposed distillation framework effectively enhances model robustness under complex environmental conditions, such as background clutter, illumination variation, and occlusion, which are critical factors in real-world applications.
+
+\item Overall, S2M-KD demonstrates a favorable trade-off between accuracy and computational cost, achieving competitive or superior performance with a lightweight model footprint. The substantial parameter reduction, together with consistent performance gains across diverse datasets, highlights the practical value of the proposed method for edge-device deployment and large-scale real-world applications where both efficiency and reliability are required.
+
+\end{itemize}
+
+\begin{table}[t]
+\centering
+\caption{\small Comprehensive performance comparison with SOTA methods. NA indicates data not available. T2C: Transformer to CNN.}
+\resizebox{1\columnwidth}{!}{
+\large
+\begin{tabular}{l:l:c:c:c:c}
+\Xhline{1pt} % 
+\multirow{2}{*}{\textbf{Type}} & \multirow{2}{*}{\textbf{Model}} & \multicolumn{3}{c:}{\textbf{Classification Accuracy (\%)}} & \multirow{2}{*}{\textbf{Params (M)}} \\
+\cdashline{3-5} % 
+ & & \textbf{Data 1} & \textbf{Data 2} & \textbf{Data 3} & \\ \hline
+ & ResNet152 & 98.36 & 97.47 & 94.41 & 60.2 \\
+ & DenseNet201 & 98.66 & 97.78 & 95.28 & 20.0 \\
+Existing & InceptionV3 & 95.89 & 93.45 & 90.74 & 27.2 \\
+CNN-based& MobileNetV3-Small & 97.02 & 96.41 & 93.45 & 2.5 \\
+ Methods & VGG19 & 92.91 & 91.24 & 86.99 & 143.7 \\
+ & Xception & NA & 95.60 & NA & 22.9 \\
+ & MobileNetV2 & 96.30 & 95.04 & 91.88 & 3.5 \\ 
+\cdashline{1-6} % 
+ & MaxViT & 99.54 & 98.96 & 97.66 & $>$30.0 \\
+Existing & T2T-ViT-14 & 98.67 & 97.83 & 96.33 & 21.5 \\
+ Transformer& DeiT-S & 97.57 & 93.92 & 91.82 & 22.1 \\
+ Methods& ViT-B/16 & 96.17 & 96.12 & 94.12 & 86.6 \\
+ & ViT-L/32 & 96.49 & 96.41 & 94.41 & $>$300.0 \\ 
+\cdashline{1-6} % 
+Heterogeneous & Swin-Tiny (Teacher) & 99.59 & 99.08 & 98.41 & 27.5 \\
+Distillation & MobileNetV3-Large (Base) & 97.40 & 95.87& 94.70 & \textbf{4.2} \\
+(T2C) & \ S2M-KD & \textbf{99.79} & \textbf{99.38} & \textbf{98.72} & \textbf{4.2} \\ \hline
+\multicolumn{2}{l:}{\textit{Improvement (vs. Best SOTA)}} & \textit{+0.25\%} & \textit{+0.42\%} & \textit{+1.06\%} & \textit{-93\% Params} \\
+\Xhline{1pt} % 
+\end{tabular}
+}
+\vspace{-1em}
+\label{tab:sota_comparison}
+\end{table}
+
+\subsection{Performance Evaluation Across Datasets}
+A well-designed model should demonstrate strong generalization capability to previously unseen distortion scenarios. In this subsection, the performances of different methods are evaluated across disparate PFID datasets to verify their generalizability and robustness. For a more comprehensive comparison, we further select a representative CNN-based method, ResNet18, and a representative Transformer-based method, ViT-B/16, as baseline models. In other words, the training and testing datasets are drawn from different datasets. For each source dataset (Data~1--Data~3), the model is trained on the source dataset and then evaluated on the other two unseen target datasets, resulting in 6 cross-domain tests in total (3 sources $\times$ 2 unseen targets). The results are reported in Table~\ref{tab:cross_val_models_full}, from which we have the following observations.
+
+\begin{table}[!htbp]
+\centering
+\caption{Cross-dataset generalization results. The average accuracy (Avg) and standard deviation (Std) are computed across all six full cross-domain validation tasks. Bold indicates the best performance. $\uparrow$ indicates higher is better, and $\downarrow$ indicates lower is better.}
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{c:c:c:c:c}
+\Xhline{1pt}
+\multirow{2}{*}{\textbf{Source Data}} & \multirow{2}{*}{\textbf{Target Data}} & \multicolumn{3}{c}{\textbf{Accuracy (\%)}} \\
+\cdashline{3-5}
+& & \textbf{ResNet18} & \textbf{ViT-B/16} & \textbf{S2M-KD} \\
+\Xhline{0.6pt}
+
+\multirow{2}{*}{Data 1} 
+ & Data 2 & 98.63 & 99.80 & \textbf{100.00} \\
+ & Data 3 & 91.67 & 95.54 & \textbf{96.12} \\
+\cdashline{1-5}
+
+\multirow{2}{*}{Data 2} 
+ & Data 1 & 97.94 & 99.49 & \textbf{100.00} \\
+ & Data 3 & 91.25 & 94.72 & \textbf{96.45} \\
+\cdashline{1-5}
+
+\multirow{2}{*}{Data 3} 
+ & Data 1 & 95.89 & 99.59 & \textbf{100.00} \\
+ & Data 2 & 96.47 & 98.73 & \textbf{99.71} \\
+\Xhline{0.6pt}
+\multicolumn{2}{c:}{\textbf{Avg~$\uparrow$ / Std~$\downarrow$ (\%)}} & 95.31 / 3.14 & 97.98 / 2.25 & \textbf{98.71$\uparrow$  / 1.89$\downarrow$} \\
+\Xhline{1pt}
+\end{tabular}
+}
+
+\label{tab:cross_val_models_full}
+\end{table}
+
+
+\begin{itemize}
+\item In all training/testing combinations, the proposed method consistently achieves accuracies above 96\%, demonstrating strong cross-dataset generalization on the three real-world datasets. Overall, S2M-KD attains an average accuracy of 98.71\% across the six cross-domain tests, with a standard deviation of 1.89, indicating high accuracy as well as good stability and robustness. Compared with the representative CNN baseline ResNet18 and the Transformer baseline ViT-B/16, S2M-KD delivers better overall performance, further highlighting its stronger cross-domain adaptability.
+
+ \item Notably, while the accuracy for all models experiences a marginal decline when generalizing to Data 3—indicating a more pronounced domain gap or distribution shift inherent in this target set—our approach demonstrates superior domain-invariant feature representation. By achieving a perfect 100.00\% accuracy in half of the cross-domain scenarios and maintaining the lowest standard deviation ($Std= 1.89$), the results suggest that our model effectively mitigates the performance degradation typically associated with out-of-distribution (OOD) data.
+ \item A comparative analysis of the cross-dataset generalization results in Table ~\ref{tab:cross_val_models_full} reveals that our proposed method consistently outperforms both CNN-based (ResNet18) and Transformer-based (ViT-B/16) architectures. This advancement over the ViT-B/16 baseline implies that our architecture not only leverages global context but also enforces a more robust alignment between disparate source and target feature spaces, ensuring high reliability across diverse sensing environments.
+\end{itemize}
+Overall, the proposed method achieves the highest average accuracy and the lowest performance fluctuation across cross-dataset evaluations, demonstrating stronger generalization ability and robustness than the representative CNN- and Transformer-based baselines.
+
+
+
+\subsection{Qualitative Analyses} \label{subsec:quaana}
+In this subsection, we provide qualitative analyses of the proposed S2M-KD by visualizing its prediction behaviors and internal representations on the three strictly isolated datasets, including confusion matrices, t-SNE embeddings, and Grad-CAM attention maps (Figs.~\ref{fig:confusion_all}--\ref{fig:gradcam}).
+
+\begin{figure}[t]
+\centering
+\subfigure[Data 1 (2021)]{\includegraphics[width=0.32\textwidth]{Exp1_CM.pdf}}\hfill
+\subfigure[Data 2 (2023)]{\includegraphics[width=0.32\textwidth]{Exp2_CM.pdf}}\hfill
+\subfigure[Data 3 (2022)]{\includegraphics[width=0.32\textwidth]{Exp3_Formatted_CM.pdf}}
+\caption{Confusion matrices of the S2M-KD Student model across three datasets. The clear diagonal dominance suggests strong class discrimination ability with only limited inter-class confusion.}
+\label{fig:confusion_all}
+\end{figure}
+
+We first visualize the confusion matrices in Fig.~\ref{fig:confusion_all}. As shown in Fig.~\ref{fig:confusion_all}, the predictions on all three datasets are dominated by the diagonal entries, indicating overall accurate classification. In particular, Dataset~1 and Dataset~2 exhibit almost no obvious confusion. Dataset 3 shows slight confusion between 'Coccidiosis' and 'Healthy' categories, primarily due to the severe clutter and erratic illumination inherent in this dataset. However, our S2M-KD framework effectively mitigates these environmental interferences. By distilling global contextual cues from the Swin Transformer into the lightweight MobileNet-V3, S2M-KD enhances the student model's ability to extract noise-resistant features. This allows for clear decision boundaries even under the strongest noise intensity, demonstrating a robust balance between efficiency and accuracy.
+
+\begin{figure}[t]
+\centering
+\subfigure[Data 1 (2021)]{\includegraphics[width=0.32\textwidth]{Exp1_tSNE.pdf}}\hfill
+\subfigure[Data 2 (2023)]{\includegraphics[width=0.32\textwidth]{Exp2_tSNE.pdf}}\hfill
+\subfigure[Data 3 (2022)]{\includegraphics[width=0.32\textwidth]{dataset3_complex_tsne.pdf}}
+\caption{t-SNE visualization of feature distributions. Compact intra-class clusters and clear inter-class margins indicate discriminative representations, even under complex noise in Dataset 3.}
+\label{fig:tsne_all}
+\end{figure}
+
+We further inspect the learned feature space using t-SNE in Fig.~\ref{fig:tsne_all}. As shown in Fig.~\ref{fig:tsne_all}, the four categories in all three datasets form relatively compact intra-class clusters with clear inter-class separation. Although Dataset~3 exhibits a more complex distribution and slightly more dispersed clusters for some categories, the overall feature space remains well separable, indicating that the model learns strongly discriminative representations, which further validates the effectiveness of S2M-KD in preserving semantic consistency across challenging domains.
+
+\begin{figure}[t]
+\centering
+\subfigure[Data 1 (2021)]{\includegraphics[width=0.32\textwidth]{Exp1_GradCAM.pdf}}\hfill
+\subfigure[Data 2 (2023)]{\includegraphics[width=0.32\textwidth]{Exp2_GradCAM.pdf}}\hfill
+\subfigure[Data 3 (2022)]{\includegraphics[width=0.32\textwidth]{Exp3_GradCAM.pdf}}
+\caption{Grad-CAM attention maps. The Student model focuses on pathological evidence (e.g., feces/lesion regions) rather than background clutter, validating the effectiveness of attention transfer from the Swin Transformer teacher.}
+\label{fig:gradcam}
+\end{figure}
+
+Finally, we visualize the Grad-CAM attention maps in Fig.~\ref{fig:gradcam}. As shown in Fig.~\ref{fig:gradcam}, the model consistently focuses on disease-relevant regions, such as lesion areas and feces, across all three datasets, while assigning much weaker responses to irrelevant background contents including grass, farm structures, and complex textures. This attention pattern suggests that the learned representations possess strong pathological relevance and good resistance to background interference, which also helps explain the robust quantitative performance facilitated by our S2M-KD framework.
+
+In summary, the qualitative analyses consistently demonstrate that S2M-KD achieves high-precision class discrimination, learns robustly separable feature representations, and maintains a precise attentional focus on disease-relevant regions across all datasets. Notably, the model's ability to preserve these properties even under the severe clutter and noise of Dataset 3 underscores the effectiveness of the knowledge distillation process in fostering environmental robustness.
+
+
+\begin{table}[t]
+\centering
+\caption{\small Ablation study on Dataset 3. The heterogeneous distillation strategy yields the highest gain.}
+\resizebox{1\columnwidth}{!}{
+\large
+\begin{tabular}{l:c:c:c}
+\Xhline{1pt} % 
+\textbf{Method} & \textbf{Architecture Type} & \textbf{Accuracy} & \textbf{Gain} \\ \hline
+MobileNetV3-Large & CNN (Baseline) & 94.70\% & - \\
+Swin-Tiny & Transformer (Teacher) & 98.41\% & +3.71\% \\ \hline
+Swin-Nano & Self-Distillation (ViT $\to$ ViT) & 98.35\% & +3.65\% \\
+S2M-KD & Heterogeneous (ViT $\to$ CNN) & \textbf{98.72\%} & \textbf{+4.02\%} \\
+\Xhline{1pt} % 
+\end{tabular}
+}
+\vspace{-1em}
+\label{tab: ablation}
+\end{table}
+\subsection{Ablation Studies} \label{subsec:abastu}
+
+We performed ablation studies on the most challenging Dataset 3 to quantify the specific contributions of each framework component.
+As summarized in Table 4, several compelling observations can be made.
+\begin{itemize}
+\item The standalone MobileNetV3-Large (Baseline) achieves an accuracy of only 94.70\% on the challenging Dataset 3. In contrast, our S2M-KD strategy elevates the student’s performance to 98.72\%, resulting in a substantial gain of +4.02\% relative to the CNN baseline. This confirms that the vanilla lightweight architecture is insufficient for complex environments without structural guidance.
+\item Compared to the Self-Distillation (Swin-Nano) setup (98.35\%), our Heterogeneous (ViT $\rightarrow$ CNN) approach yields superior results. This underscores that transferring knowledge across disparate architectures is more effective for this task. Such "Cross-Architecture Synergy" stems from the complementary nature of Transformer-based and CNN-based representations. While the Swin Transformer excels at modeling long-range dependencies and global context, the CNN excels at capturing localized spatial features. S2M-KD essentially integrates the "optimal solutions" of these two distinct computational paradigms into a single lightweight network.
+\item Notably, S2M-KD not only narrows the gap but actually surpasses the Swin-Tiny teacher’s performance (98.41\%) by 0.31\%. This counter-intuitive phenomenon suggests that the student model does not merely mimic the teacher’s predictions. Instead, the heterogeneous distillation process allows the student to inherit the teacher's global contextual insights while retaining and refining its own localized spatial inductive bias.
+\end{itemize}
+
+\subsection{Hardware Deployment and Performance Evaluation}
+\label{sec:deployment}
+To further evaluate the practical deployment capability of the proposed S2M-KD framework, we conducted hardware deployment experiments on the Rockchip RK3588 edge platform. Specifically, we benchmarked the inference efficiency of the distilled MobileNetV3-Large student under different input resolutions and precision modes, including CPU-based FP32 inference and NPU-based FP16/INT8 inference. This evaluation aims to verify whether the proposed framework can simultaneously maintain competitive recognition performance and meet the real-time requirements of intelligent poultry health monitoring in edge scenarios.
+
+
+\begin{table}[t]
+\centering
+\caption{\small Deployment performance of S2M-KD on the RK3588 edge platform under different input resolutions. All NPU tests utilize the 3-core acceleration mode.}
+\resizebox{1\columnwidth}{!}{
+\large
+\begin{tabular}{c:c:c:c:c:c}
+\Xhline{1pt} % 
+\textbf{Input Size} & \textbf{Inference Mode} & \textbf{Precision} & \textbf{Latency (ms)} & \textbf{Throughput (FPS)} & \textbf{Performance Gain} \\ \hline
+\multirow{3}{*}{128$\times$128}
+& CPU (Baseline) & FP32 & 12.40 & 80.68  & 1.00$\times$ \\
+& NPU (S2M-KD)     & FP16 & 7.64  & 130.91 & 1.62$\times$ \\
+& NPU (S2M-KD) & INT8 & \textbf{6.49} & \textbf{154.07} & \textbf{1.91$\times$} \\ \hline
+\multirow{3}{*}{224$\times$224}
+& CPU (Baseline) & FP32 & 27.24 & 36.71 & 1.00$\times$ \\
+& NPU (S2M-KD)     & FP16 & 12.51 & 79.96 & 2.18$\times$ \\
+& NPU (S2M-KD) & INT8 & \textbf{10.46} & \textbf{95.62} & \textbf{2.60$\times$} \\ \hline
+\multirow{3}{*}{256$\times$256}
+& CPU (Baseline) & FP32 & 33.77 & 29.61 & 1.00$\times$ \\
+& NPU (S2M-KD)     & FP16 & 21.71 & 46.07 & 1.56$\times$ \\
+& NPU (S2M-KD) & INT8 & \textbf{11.83} & \textbf{84.53} & \textbf{2.86$\times$} \\
+\Xhline{1pt} % 
+\end{tabular}
+}
+\vspace{-1em}
+\label{tab:deployment_rk3588}
+\end{table}
+
+As shown in Table~\ref{tab:deployment_rk3588}, the proposed deployment scheme consistently improves inference efficiency across all tested input resolutions. For the smallest input size of 128$\times$128, INT8 deployment on the RK3588 NPU reduces the latency from 12.40 ms to 6.49 ms, while increasing the throughput from 80.68 FPS to 154.07 FPS, corresponding to a 1.91$\times$ speedup over the CPU baseline. When the input resolution increases to 224$\times$224, which is more representative of practical visual recognition settings, the INT8 mode further decreases the latency from 27.24 ms to 10.46 ms and raises the throughput from 36.71 FPS to 95.62 FPS, achieving a 2.60$\times$ acceleration. At the highest tested resolution of 256$\times$256, the advantage of hardware acceleration becomes even more evident: the INT8 NPU inference reaches 84.53 FPS with a latency of 11.83 ms, compared with 29.61 FPS and 33.77 ms on CPU, yielding the highest speedup of 2.86$\times$. In addition, FP16 inference also provides clear improvements over the CPU baseline, but INT8 quantization consistently delivers the best latency-throughput trade-off under all resolutions.
+
+Overall, these results demonstrate that the proposed S2M-KD framework not only achieves strong classification performance but also exhibits excellent edge-side deployment efficiency on the RK3588 platform. The combination of a lightweight student architecture and NPU-friendly quantization enables real-time inference with substantial acceleration and low deployment overhead. This makes the proposed method easy to integrate into practical poultry health monitoring systems and highly suitable for real-world farming environments, where efficient, stable, and low-cost on-device deployment is essential.
+
+\section{Conclusion}
+
+This paper presents S2M-KD, an efficient cross-architecture knowledge distillation framework for poultry disease classification in edge computing scenarios. The proposed framework addresses the practical trade-off between recognition accuracy and deployment efficiency by transferring knowledge from a high-capacity Swin Transformer teacher to a lightweight MobileNetV3 student. Through heterogeneous knowledge distillation, the student model is encouraged to learn both discriminative class relationships and informative representations from the teacher, thereby improving the recognition capability of the lightweight model while maintaining low computational cost.
+
+The proposed method extends heterogeneous knowledge distillation to poultry fecal image analysis and provides a practical solution for intelligent disease monitoring in resource-constrained agricultural environments. The results demonstrate that S2M-KD can achieve a favorable balance among accuracy, robustness, generalization ability, and inference efficiency, indicating its potential for real-world precision livestock farming applications.
+
+In future work, we will further explore the application potential of this efficient cross-architecture distillation paradigm in broader agricultural and livestock scenarios. Promising directions include real-time disease monitoring for other livestock such as swine and cattle, multi-modal animal health assessment using image, video, and environmental sensor data, and large-scale automated inspection systems deployed on agricultural robots, mobile monitoring platforms, or unmanned aerial vehicles.
+
+\section*{Declaration of Competing Interest}
+The authors declare that they have no known competing financial interests.
+
+\section*{Acknowledgements}
+This work was supported by the Scientific Key Research Fund of Guangdong Provincial Education Department (No.~2025ZDZX1020) and the Guangdong Provincial Key Discipline Research Capacity Enhancement Project (No.~2025ZDJS139).
+
+\bibliography{mybibfile}
+
+\end{document}

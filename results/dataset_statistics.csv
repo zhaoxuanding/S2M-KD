@@ -1,0 +1,5 @@
+dataset,year,total_images,split_ratio,healthy,coccidiosis,salmonella,newcastle
+Data1,2021,8101,70:15:15,2090,2077,2096,1838
+Data2,2023,8470,70:15:15,2050,2100,2270,2050
+Data3,2022,10136,70:15:15,2592,2603,2625,2316
+

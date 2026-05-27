@@ -1,0 +1,17 @@
+type,model,data1_accuracy,data2_accuracy,data3_accuracy,params_m
+Existing CNN-based,ResNet152,NA,98.30,NA,60.2
+Existing CNN-based,DenseNet201,NA,97.90,NA,20.0
+Existing CNN-based,InceptionV3,NA,96.20,NA,23.9
+Existing CNN-based,MobileNetV3-Small,NA,97.40,NA,2.5
+Existing CNN-based,VGG19,NA,95.60,NA,143.7
+Existing CNN-based,Xception,NA,95.60,NA,22.9
+Existing CNN-based,MobileNetV2,98.02,NA,NA,3.5
+Existing Transformer,MaxViT,99.54,98.96,97.66,>30.0
+Existing Transformer,T2T-ViT-14,98.67,97.83,96.33,21.5
+Existing Transformer,DeiT-S,97.57,93.92,91.82,22.1
+Existing Transformer,ViT-B/16,96.17,96.12,94.12,86.6
+Existing Transformer,ViT-L/32,96.49,96.41,94.41,>300.0
+Heterogeneous Distillation,Swin-Tiny Teacher,99.59,99.08,98.41,27.5
+Heterogeneous Distillation,MobileNetV3-Large Base,97.40,95.87,94.70,4.2
+Heterogeneous Distillation,S2M-KD,99.79,99.38,98.72,4.2
+

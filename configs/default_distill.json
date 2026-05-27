@@ -1,0 +1,17 @@
+{
+  "data_root": "data/Data1",
+  "teacher_checkpoint": "outputs/teacher_swin_data1.pth",
+  "output": "outputs/student_mobilenetv3_data1.pth",
+  "student": "mobilenetv3_large",
+  "num_classes": 4,
+  "image_size": 224,
+  "epochs": 50,
+  "batch_size": 128,
+  "learning_rate": 0.001,
+  "weight_decay": 0.0001,
+  "temperature": 4.0,
+  "alpha": 0.5,
+  "num_workers": 8,
+  "seed": 42
+}
+

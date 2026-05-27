@@ -1,0 +1,6 @@
+method,architecture_type,accuracy,gain
+MobileNetV3-Large,CNN Baseline,94.70,-
+Swin-Tiny,Transformer Teacher,98.41,+3.71
+Swin-Nano,Self-Distillation ViT-to-ViT,98.35,+3.65
+S2M-KD,Heterogeneous ViT-to-CNN,98.72,+4.02
+

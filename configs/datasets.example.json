@@ -1,0 +1,7 @@
+{
+  "Data1": "data/Data1",
+  "Data2": "data/Data2",
+  "Data3": "data/Data3",
+  "class_order": ["cocci", "healthy", "ncd", "salmo"]
+}
+

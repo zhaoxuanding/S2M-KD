@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+title: S2M-KD
+message: If you use this code, please cite the associated paper.
+type: software
+authors:
+  - family-names: Ding
+    given-names: Zhaoxuan
+  - family-names: Xing
+    given-names: Fengchuang
+  - family-names: Zhou
+    given-names: Chao
+  - family-names: Zeng
+    given-names: Peiyuan
+year: 2026
+repository-code: https://github.com/<your-name>/S2M-KD
+preferred-citation:
+  type: article
+  title: Non-Invasive Poultry Disease Diagnosis via Fecal Imaging with Cross-Architecture Distillation
+  authors:
+    - family-names: Ding
+      given-names: Zhaoxuan
+    - family-names: Xing
+      given-names: Fengchuang
+    - family-names: Zhou
+      given-names: Chao
+    - family-names: Zeng
+      given-names: Peiyuan
+  journal: Manuscript
+  year: 2026

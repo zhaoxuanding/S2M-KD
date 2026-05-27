@@ -1,0 +1,11 @@
+input_size,inference_mode,precision,latency_ms,throughput_fps,performance_gain
+128x128,CPU Baseline,FP32,12.40,80.68,1.00x
+128x128,NPU,FP16,7.64,130.91,1.62x
+128x128,NPU,INT8,6.49,154.07,1.91x
+224x224,CPU Baseline,FP32,27.24,36.71,1.00x
+224x224,NPU,FP16,12.51,79.96,2.18x
+224x224,NPU,INT8,10.46,95.62,2.60x
+256x256,CPU Baseline,FP32,33.77,29.61,1.00x
+256x256,NPU,FP16,21.71,46.07,1.56x
+256x256,NPU,INT8,11.83,84.53,2.86x
+

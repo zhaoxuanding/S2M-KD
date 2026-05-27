@@ -1,0 +1,9 @@
+source_data,target_data,resnet18_accuracy,vit_b_16_accuracy,s2m_kd_accuracy
+Data1,Data2,98.63,99.80,100.00
+Data1,Data3,91.67,95.54,96.12
+Data2,Data1,97.94,99.49,100.00
+Data2,Data3,91.25,94.72,96.45
+Data3,Data1,95.89,99.59,100.00
+Data3,Data2,96.47,98.73,99.71
+Average/Std,,95.31 / 3.14,97.98 / 2.25,98.71 / 1.89
+
