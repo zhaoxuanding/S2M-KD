@@ -15,7 +15,7 @@ year: 2026
 repository-code: https://github.com/<your-name>/S2M-KD
 preferred-citation:
   type: article
-  title: Non-Invasive Poultry Disease Diagnosis via Fecal Imaging with Cross-Architecture Distillation
+  title: Non-Invasive Poultry Disease Screening via Fecal Imaging with Cross-Architecture Distillation
   authors:
     - family-names: Ding
       given-names: Zhaoxuan
@@ -25,5 +25,5 @@ preferred-citation:
       given-names: Chao
     - family-names: Zeng
       given-names: Peiyuan
-  journal: Manuscript
+  journal: Pattern Analysis and Applications
   year: 2026

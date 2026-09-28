@@ -150,9 +150,9 @@ The full tables are available in [`results/`](results/).
 
 ```bibtex
 @article{ding2026s2mkd,
-  title={Non-Invasive Poultry Disease Diagnosis via Fecal Imaging with Cross-Architecture Distillation},
+  title={Non-Invasive Poultry Disease Screening via Fecal Imaging with Cross-Architecture Distillation},
   author={Ding, Zhaoxuan and Xing, Fengchuang and Zhou, Chao and Zeng, Peiyuan},
-  journal={Manuscript},
+  journal={Pattern Analysis and Applications},
   year={2026}
 }
 ```
